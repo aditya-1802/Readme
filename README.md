@@ -65,6 +65,8 @@ def live_background_removal(background_image_path):
     cap.release()
     cv2.destroyAllWindows()
 
+background_image_path = r'C:/user/download/img.jpg'  # Set your background image path here
+live_background_removal(background_image_path)
 ###################Code END##############################
 
 
