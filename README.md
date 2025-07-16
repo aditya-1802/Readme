@@ -1,25 +1,31 @@
-pip install streamlit==1.15.0
-
-pip install pandas==1.5.3
-
-
-pip install numpy==1.23.5
-
-
-pip install langchain==0.0.185
-
-
-pip install langchain-google-genai==0.0.5
-
-
-pip install langchain-community==0.0.8
-
-
-pip install faiss-cpu==1.7.2
-
-
-pip install python-dotenv==0.21.0
-
-
-pip install langchain-text-splitters==0.0.1
-
+SGSITS → CSE
+SGSITS → IT
+SGSITS → ECE
+DAVV → CSE
+DAVV → IT
+DAVV → ECE
+JEC JABALPUR → CSE
+MITS GWALIOR → CSE
+JEC JABALPUR → IT
+MITS GWALIOR → IT
+MITS GWALIOR → CSD
+MITS GWALIOR → CST
+MITS GWALIOR → CSBS
+MITS GWALIOR → AIDS
+JEC JABALPUR → AIDS
+MITS GWALIOR → AIML
+MITS GWALIOR → AI
+MITS GWALIOR → AI & ROBOTICS
+MITS GWALIOR → IOTIT
+MITS GWALIOR → MAC
+JEC JABALPUR → MAC
+MITS GWALIOR → ECE
+JEC JABALPUR → ECE
+DAVV → ECE
+SGSITS → ECE
+UIT RGPV Bhopal → CSE
+UIT RGPV Bhopal → IT
+LNCT Bhopal (Govt quota seat) → CSE
+LNCT Bhopal → IT
+LNCTE Bhopal → CSE
+LNCTE Bhopal → IT
