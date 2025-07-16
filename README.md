@@ -29,3 +29,5 @@ LNCT Bhopal (Govt quota seat) → CSE
 LNCT Bhopal → IT
 LNCTE Bhopal → CSE
 LNCTE Bhopal → IT
+
+
