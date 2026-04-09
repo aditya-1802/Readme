@@ -1,0 +1,1666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TruckFlow — India's Freight Command Platform</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Bebas+Neue&family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════
+   RESET + TOKENS (LIGHT THEME)
+═══════════════════════════════════════════════ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  /* Light surfaces */
+  --bg:#f4f5f9;
+  --bg2:#eaecf4;
+  --surface:rgba(255,255,255,0.96);
+  --surface2:rgba(255,255,255,0.80);
+  --glass:rgba(255,255,255,0.70);
+  --glass2:rgba(255,255,255,0.85);
+  --rim:rgba(0,0,0,0.08);
+  --rim2:rgba(0,0,0,0.14);
+
+  /* Accent system — slightly tuned for light bg */
+  --fire:#e83d00;
+  --fire2:#f55c20;
+  --fire-glow:rgba(232,61,0,0.28);
+  --fire-soft:rgba(232,61,0,0.08);
+  --fire-xsoft:rgba(232,61,0,0.04);
+  --fire-border:rgba(232,61,0,0.22);
+
+  --ice:#0099c7;
+  --ice-soft:rgba(0,153,199,0.09);
+  --jade:#00936a;
+  --jade-soft:rgba(0,147,106,0.09);
+  --crimson:#d92245;
+  --crimson-soft:rgba(217,34,69,0.09);
+  --gold:#c8880a;
+  --gold-soft:rgba(200,136,10,0.09);
+  --violet:#7b35f0;
+  --violet-soft:rgba(123,53,240,0.09);
+
+  /* Text */
+  --t1:#0d1117;
+  --t2:#4a5568;
+  --t3:#718096;
+  --t4:#b0bdd0;
+
+  /* Shadow */
+  --shadow-sm:0 1px 3px rgba(0,0,0,.07),0 1px 2px rgba(0,0,0,.04);
+  --shadow-md:0 4px 16px rgba(0,0,0,.09),0 1px 4px rgba(0,0,0,.05);
+  --shadow-lg:0 12px 40px rgba(0,0,0,.12),0 4px 12px rgba(0,0,0,.06);
+
+  /* Fonts */
+  --f-display:'Bebas Neue',sans-serif;
+  --f-body:'Space Grotesk',sans-serif;
+  --f-mono:'JetBrains Mono',monospace;
+}
+
+html,body{height:100%;background:var(--bg);color:var(--t1);}
+body{font-family:var(--f-body);overflow:hidden;}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-thumb{background:var(--rim2);border-radius:2px;}
+::-webkit-scrollbar-track{background:transparent;}
+
+/* ─── ANIMATIONS ─── */
+@keyframes fadeSlide{from{opacity:0;transform:translateY(18px);}to{opacity:1;transform:translateY(0);}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(32px);}to{opacity:1;transform:translateY(0);}}
+@keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
+@keyframes ping{0%{transform:scale(1);opacity:.6;}100%{transform:scale(2.5);opacity:0;}}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.4;}}
+@keyframes countUp{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+@keyframes barGrow{from{transform:scaleY(0);}to{transform:scaleY(1);}}
+@keyframes glow{0%,100%{box-shadow:0 0 14px var(--fire-glow);}50%{box-shadow:0 0 28px var(--fire-glow),0 0 48px rgba(232,61,0,.12);}}
+@keyframes rotateRing{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
+@keyframes truckDrive{0%{transform:translateX(-120px);opacity:0;}100%{transform:translateX(0);opacity:1;}}
+@keyframes roadScroll{0%{background-position:0 0;}100%{background-position:200px 0;}}
+@keyframes shimmer{0%{background-position:200% 0;}100%{background-position:-200% 0;}}
+@keyframes pageEnter{from{opacity:0;transform:scale(.98);}to{opacity:1;transform:scale(1);}}
+@keyframes dotBounce{0%,80%,100%{transform:scale(0);}40%{transform:scale(1);}}
+
+/* ═══════════════════════════════════
+   PAGES SYSTEM
+═══════════════════════════════════ */
+.page{display:none;position:fixed;inset:0;overflow-y:auto;background:var(--bg);}
+.page.active{display:flex;flex-direction:column;animation:pageEnter .35s ease both;}
+
+/* ═══════════════════════════════════
+   LANDING PAGE
+═══════════════════════════════════ */
+#page-landing{overflow-y:auto;overflow-x:hidden;}
+
+/* Landing BG */
+.land-bg{
+  position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:linear-gradient(160deg,#fff 0%,#f4f5f9 40%,#eceef8 100%);
+  overflow:hidden;
+}
+.land-bg::before{
+  content:'';position:absolute;width:700px;height:700px;border-radius:50%;
+  background:radial-gradient(circle,rgba(232,61,0,.06) 0%,transparent 70%);
+  top:-200px;right:-150px;
+}
+.land-bg::after{
+  content:'';position:absolute;width:600px;height:600px;border-radius:50%;
+  background:radial-gradient(circle,rgba(123,53,240,.05) 0%,transparent 70%);
+  bottom:-200px;left:-100px;
+}
+.land-grid{
+  position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:linear-gradient(rgba(0,0,0,.028) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(0,0,0,.028) 1px,transparent 1px);
+  background-size:48px 48px;
+}
+
+/* Landing Nav */
+.land-nav{
+  position:relative;z-index:10;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 64px;height:72px;
+  background:rgba(255,255,255,.85);
+  backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--rim);
+  box-shadow:var(--shadow-sm);
+  flex-shrink:0;
+}
+.land-nav-brand{display:flex;align-items:center;gap:12px;}
+.land-nav-emblem{
+  width:40px;height:40px;border-radius:10px;
+  background:linear-gradient(135deg,var(--fire),var(--fire2));
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.2rem;animation:glow 3s ease-in-out infinite;
+}
+.land-nav-name{font-family:var(--f-display);font-size:1.7rem;letter-spacing:2px;color:var(--t1);}
+.land-nav-links{display:flex;align-items:center;gap:32px;}
+.land-nav-link{font-size:.86rem;font-weight:500;color:var(--t2);text-decoration:none;cursor:pointer;transition:color .15s;}
+.land-nav-link:hover{color:var(--fire);}
+.land-nav-cta{
+  display:flex;align-items:center;gap:12px;
+}
+.btn-ghost{
+  padding:9px 22px;border-radius:8px;border:1px solid var(--rim2);
+  font-family:var(--f-body);font-size:.84rem;font-weight:600;
+  color:var(--t1);background:transparent;cursor:pointer;transition:all .15s;
+}
+.btn-ghost:hover{background:var(--surface);border-color:var(--fire);color:var(--fire);}
+.btn-primary{
+  padding:9px 24px;border-radius:8px;border:none;
+  background:linear-gradient(135deg,var(--fire),var(--fire2));
+  font-family:var(--f-body);font-size:.84rem;font-weight:600;
+  color:#fff;cursor:pointer;transition:all .15s;
+  box-shadow:0 4px 16px var(--fire-glow);
+}
+.btn-primary:hover{opacity:.88;transform:translateY(-1px);}
+
+/* Hero */
+.land-content{position:relative;z-index:1;}
+.hero{
+  padding:80px 64px 60px;
+  display:grid;grid-template-columns:1fr 1fr;
+  gap:60px;align-items:center;min-height:calc(100vh - 72px - 80px);
+}
+.hero-eyebrow{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:6px 14px;border-radius:20px;
+  background:var(--fire-soft);border:1px solid var(--fire-border);
+  font-family:var(--f-mono);font-size:.62rem;color:var(--fire);
+  letter-spacing:2px;text-transform:uppercase;margin-bottom:22px;
+}
+.hero-h1{
+  font-family:var(--f-display);
+  font-size:5.2rem;letter-spacing:2px;line-height:.95;
+  color:var(--t1);margin-bottom:22px;
+}
+.hero-h1 span{
+  background:linear-gradient(135deg,var(--fire),var(--fire2));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.hero-sub{
+  font-size:1.05rem;line-height:1.65;color:var(--t2);
+  max-width:480px;margin-bottom:38px;
+}
+.hero-actions{display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
+.btn-hero{
+  padding:14px 32px;border-radius:10px;border:none;
+  background:linear-gradient(135deg,var(--fire),var(--fire2));
+  font-family:var(--f-body);font-size:.95rem;font-weight:700;
+  color:#fff;cursor:pointer;transition:all .2s;
+  box-shadow:0 6px 24px var(--fire-glow);
+  display:flex;align-items:center;gap:9px;
+}
+.btn-hero:hover{transform:translateY(-2px);box-shadow:0 10px 32px var(--fire-glow);}
+.btn-hero-out{
+  padding:14px 32px;border-radius:10px;
+  background:var(--surface);border:1.5px solid var(--rim2);
+  font-family:var(--f-body);font-size:.95rem;font-weight:600;
+  color:var(--t1);cursor:pointer;transition:all .2s;
+}
+.btn-hero-out:hover{border-color:var(--fire);color:var(--fire);}
+
+.hero-trust{display:flex;align-items:center;gap:16px;margin-top:28px;}
+.trust-item{display:flex;align-items:center;gap:7px;font-family:var(--f-mono);font-size:.6rem;color:var(--t3);letter-spacing:.5px;}
+.trust-dot{width:5px;height:5px;border-radius:50%;background:var(--jade);}
+
+/* Hero Visual */
+.hero-visual{
+  display:flex;align-items:center;justify-content:center;
+  position:relative;
+}
+.hero-card-stack{position:relative;width:100%;max-width:500px;}
+.hc-main{
+  background:#fff;border:1px solid var(--rim);border-radius:20px;
+  padding:28px;box-shadow:var(--shadow-lg);
+  animation:fadeSlide .7s ease .2s both;
+}
+.hc-mini{
+  position:absolute;background:#fff;border:1px solid var(--rim);border-radius:14px;
+  padding:16px 18px;box-shadow:var(--shadow-md);
+}
+.hc-mini-1{right:-32px;top:20px;animation:fadeSlide .7s ease .5s both;}
+.hc-mini-2{left:-24px;bottom:20px;animation:fadeSlide .7s ease .7s both;}
+.hc-label{font-family:var(--f-mono);font-size:.54rem;color:var(--t3);letter-spacing:2px;text-transform:uppercase;margin-bottom:6px;}
+.hc-value{font-family:var(--f-display);font-size:1.8rem;letter-spacing:.5px;color:var(--t1);}
+.hc-sub{font-size:.72rem;color:var(--t3);margin-top:3px;}
+.hc-route{display:flex;align-items:center;gap:10px;margin-bottom:16px;}
+.hc-city{font-weight:600;font-size:.88rem;}
+.hc-arrow{flex:1;height:1px;background:var(--rim2);position:relative;}
+.hc-arrow::after{content:'›';position:absolute;right:-4px;top:-9px;color:var(--fire);font-size:1rem;}
+.hc-bar-row{display:flex;gap:3px;height:48px;align-items:flex-end;margin-top:16px;}
+.hc-bar{border-radius:3px 3px 0 0;}
+.hc-tag{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:4px 10px;border-radius:20px;
+  font-family:var(--f-mono);font-size:.58rem;font-weight:600;
+}
+.hc-tag-fire{background:var(--fire-soft);color:var(--fire);border:1px solid var(--fire-border);}
+.hc-tag-jade{background:var(--jade-soft);color:var(--jade);border:1px solid rgba(0,147,106,.2);}
+.hc-tag-ice{background:var(--ice-soft);color:var(--ice);border:1px solid rgba(0,153,199,.2);}
+
+/* Stats strip */
+.stats-strip{
+  display:grid;grid-template-columns:repeat(4,1fr);
+  gap:1px;background:var(--rim);
+  border-top:1px solid var(--rim);border-bottom:1px solid var(--rim);
+  margin:0 0 80px;
+}
+.stat-item{
+  background:#fff;padding:32px 24px;text-align:center;
+  transition:background .15s;
+}
+.stat-item:hover{background:var(--bg);}
+.stat-num{font-family:var(--f-display);font-size:3rem;letter-spacing:1px;color:var(--t1);margin-bottom:4px;}
+.stat-num span{color:var(--fire);}
+.stat-lbl{font-family:var(--f-mono);font-size:.6rem;color:var(--t3);letter-spacing:2px;text-transform:uppercase;}
+
+/* Features */
+.section{padding:0 64px 80px;}
+.sec-eye{font-family:var(--f-mono);font-size:.6rem;color:var(--fire);letter-spacing:3px;text-transform:uppercase;margin-bottom:10px;}
+.sec-h2{font-family:var(--f-display);font-size:3.2rem;letter-spacing:1px;color:var(--t1);margin-bottom:12px;}
+.sec-sub{font-size:.92rem;color:var(--t2);max-width:520px;line-height:1.6;margin-bottom:42px;}
+.feat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+.feat-card{
+  background:#fff;border:1px solid var(--rim);border-radius:16px;
+  padding:28px;transition:all .2s;cursor:default;
+}
+.feat-card:hover{transform:translateY(-3px);box-shadow:var(--shadow-md);border-color:var(--fire-border);}
+.feat-ico{
+  width:44px;height:44px;border-radius:12px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.2rem;margin-bottom:18px;
+}
+.feat-ico-fire{background:var(--fire-soft);border:1px solid var(--fire-border);}
+.feat-ico-jade{background:var(--jade-soft);border:1px solid rgba(0,147,106,.2);}
+.feat-ico-ice{background:var(--ice-soft);border:1px solid rgba(0,153,199,.2);}
+.feat-ico-gold{background:var(--gold-soft);border:1px solid rgba(200,136,10,.2);}
+.feat-ico-violet{background:var(--violet-soft);border:1px solid rgba(123,53,240,.2);}
+.feat-ico-crimson{background:var(--crimson-soft);border:1px solid rgba(217,34,69,.2);}
+.feat-title{font-weight:700;font-size:.95rem;margin-bottom:8px;}
+.feat-desc{font-size:.82rem;color:var(--t2);line-height:1.6;}
+
+/* Roles section */
+.roles-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:32px;}
+.role-card{
+  background:#fff;border:2px solid var(--rim);border-radius:14px;
+  padding:24px 20px;text-align:center;cursor:pointer;
+  transition:all .2s;
+}
+.role-card:hover,.role-card.sel{border-color:var(--fire);background:var(--fire-xsoft);}
+.role-card.sel .role-name{color:var(--fire);}
+.role-ico{font-size:2rem;margin-bottom:12px;}
+.role-name{font-weight:700;font-size:.95rem;margin-bottom:6px;transition:color .15s;}
+.role-desc{font-size:.75rem;color:var(--t2);line-height:1.5;}
+
+/* CTA section */
+.cta-section{
+  margin:0 64px 64px;border-radius:20px;
+  background:linear-gradient(135deg,#1a0500 0%,#2d0a00 40%,#1a1030 100%);
+  padding:64px;display:flex;align-items:center;justify-content:space-between;
+  gap:40px;position:relative;overflow:hidden;
+}
+.cta-section::before{
+  content:'';position:absolute;width:400px;height:400px;border-radius:50%;
+  background:radial-gradient(circle,rgba(232,61,0,.2) 0%,transparent 70%);
+  top:-100px;right:50px;pointer-events:none;
+}
+.cta-h2{font-family:var(--f-display);font-size:3.2rem;letter-spacing:1px;color:#fff;margin-bottom:12px;}
+.cta-sub{font-size:.92rem;color:rgba(255,255,255,.6);max-width:420px;line-height:1.6;}
+.land-footer{
+  background:#fff;border-top:1px solid var(--rim);
+  padding:28px 64px;display:flex;align-items:center;justify-content:space-between;
+}
+.land-footer-brand{font-family:var(--f-display);font-size:1.2rem;letter-spacing:2px;color:var(--t3);}
+.land-footer-txt{font-family:var(--f-mono);font-size:.58rem;color:var(--t4);letter-spacing:1px;}
+
+/* ═══════════════════════════════════
+   LOGIN PAGE
+═══════════════════════════════════ */
+#page-login{
+  align-items:center;justify-content:center;min-height:100vh;
+  background:linear-gradient(160deg,#fff 0%,#f4f5f9 60%,#eceef8 100%);
+  position:relative;overflow:hidden;
+}
+.login-bg-grid{
+  position:fixed;inset:0;pointer-events:none;
+  background-image:linear-gradient(rgba(0,0,0,.03) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(0,0,0,.03) 1px,transparent 1px);
+  background-size:48px 48px;
+}
+.login-bg-glow{
+  position:fixed;top:-200px;right:-200px;
+  width:600px;height:600px;border-radius:50%;
+  background:radial-gradient(circle,rgba(232,61,0,.07) 0%,transparent 70%);
+  pointer-events:none;
+}
+.login-box{
+  position:relative;z-index:2;
+  width:440px;background:#fff;
+  border:1px solid var(--rim);border-radius:20px;
+  box-shadow:var(--shadow-lg);
+  padding:40px;
+  animation:fadeUp .5s ease both;
+}
+.login-brand{display:flex;align-items:center;gap:12px;margin-bottom:32px;justify-content:center;}
+.login-emblem{
+  width:42px;height:42px;border-radius:10px;
+  background:linear-gradient(135deg,var(--fire),var(--fire2));
+  display:flex;align-items:center;justify-content:center;font-size:1.3rem;
+  animation:glow 3s ease infinite;
+}
+.login-title{font-family:var(--f-display);font-size:1.8rem;letter-spacing:2px;color:var(--t1);}
+.login-sub{text-align:center;font-size:.82rem;color:var(--t3);margin-bottom:28px;}
+.login-lbl{font-family:var(--f-mono);font-size:.58rem;letter-spacing:1.5px;color:var(--t3);text-transform:uppercase;margin-bottom:7px;display:block;}
+.login-input{
+  width:100%;padding:11px 15px;border-radius:9px;
+  border:1.5px solid var(--rim2);
+  background:#fff;color:var(--t1);
+  font-family:var(--f-body);font-size:.9rem;
+  transition:border-color .15s;outline:none;margin-bottom:18px;
+}
+.login-input:focus{border-color:var(--fire);}
+.login-input::placeholder{color:var(--t4);}
+
+/* Role selector */
+.role-sel-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:24px;}
+.role-opt{
+  padding:12px 10px;border-radius:9px;border:1.5px solid var(--rim);
+  background:#fff;cursor:pointer;transition:all .15s;text-align:center;
+}
+.role-opt:hover{border-color:var(--fire-border);background:var(--fire-xsoft);}
+.role-opt.sel{border-color:var(--fire);background:var(--fire-soft);}
+.role-opt-ico{font-size:1.3rem;display:block;margin-bottom:5px;}
+.role-opt-lbl{font-size:.78rem;font-weight:600;display:block;color:var(--t1);}
+.role-opt.sel .role-opt-lbl{color:var(--fire);}
+.role-opt-sub{font-size:.62rem;color:var(--t3);display:block;margin-top:2px;}
+
+.btn-login{
+  width:100%;padding:13px;border-radius:10px;border:none;
+  background:linear-gradient(135deg,var(--fire),var(--fire2));
+  color:#fff;font-family:var(--f-body);font-size:.95rem;font-weight:700;
+  cursor:pointer;transition:all .2s;
+  box-shadow:0 4px 16px var(--fire-glow);
+  margin-top:4px;
+}
+.btn-login:hover{opacity:.88;transform:translateY(-1px);}
+.login-back{
+  display:block;text-align:center;margin-top:20px;
+  font-size:.78rem;color:var(--t3);cursor:pointer;transition:color .15s;
+}
+.login-back:hover{color:var(--fire);}
+.login-err{
+  background:var(--crimson-soft);border:1px solid rgba(217,34,69,.25);
+  border-radius:8px;padding:10px 14px;
+  font-size:.78rem;color:var(--crimson);margin-bottom:16px;display:none;
+}
+
+/* ═══════════════════════════════════
+   APP SHELL (LIGHT DASHBOARD)
+═══════════════════════════════════ */
+#page-app{overflow:hidden;}
+.bg-atmosphere{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden;}
+.bg-atmosphere::before{
+  content:'';position:absolute;width:500px;height:500px;
+  background:radial-gradient(circle,rgba(232,61,0,.04) 0%,transparent 70%);
+  top:-150px;left:-80px;
+}
+.bg-atmosphere::after{
+  content:'';position:absolute;width:400px;height:400px;
+  background:radial-gradient(circle,rgba(0,153,199,.03) 0%,transparent 70%);
+  bottom:-100px;right:-50px;
+}
+
+/* Topbar */
+.topbar{
+  height:58px;flex-shrink:0;
+  background:rgba(255,255,255,.95);
+  backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--rim);
+  display:flex;align-items:center;
+  padding:0 24px;gap:20px;
+  position:relative;z-index:100;
+  box-shadow:var(--shadow-sm);
+}
+.topbar::after{
+  content:'';position:absolute;bottom:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,var(--fire),var(--fire2),transparent);
+  opacity:.6;
+}
+
+.brand{display:flex;align-items:center;gap:12px;margin-right:4px;}
+.brand-emblem{
+  width:36px;height:36px;border-radius:8px;
+  background:linear-gradient(135deg,var(--fire),var(--fire2));
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.1rem;position:relative;
+  box-shadow:0 0 14px var(--fire-glow);
+  animation:glow 3s ease-in-out infinite;
+}
+.brand-name{font-family:var(--f-display);font-size:1.5rem;letter-spacing:2px;color:var(--t1);line-height:1;}
+.brand-tag{font-family:var(--f-mono);font-size:.42rem;color:var(--t3);letter-spacing:3px;text-transform:uppercase;margin-top:1px;}
+
+/* Role badge */
+.role-badge{
+  display:flex;align-items:center;gap:6px;
+  padding:4px 12px;border-radius:20px;
+  background:var(--fire-soft);border:1px solid var(--fire-border);
+  font-family:var(--f-mono);font-size:.58rem;color:var(--fire);
+  letter-spacing:1px;text-transform:uppercase;
+  margin-right:4px;
+}
+
+.nav{flex:1;display:flex;align-items:center;gap:2px;}
+.nb{
+  display:flex;align-items:center;gap:7px;
+  padding:7px 14px;border-radius:7px;cursor:pointer;
+  border:1px solid transparent;background:transparent;
+  color:var(--t2);font-family:var(--f-body);font-size:.78rem;font-weight:500;
+  transition:all .2s;white-space:nowrap;position:relative;
+}
+.nb:hover{color:var(--t1);background:var(--bg2);}
+.nb.on{color:var(--fire);background:var(--fire-soft);border-color:var(--fire-border);}
+.nb .ni{font-size:.85rem;width:16px;text-align:center;}
+.nb-pip{width:4px;height:4px;border-radius:50%;background:var(--fire);position:absolute;top:6px;right:6px;display:none;}
+.nb.on .nb-pip{display:block;animation:pulse 2s ease infinite;}
+
+.topbar-end{display:flex;align-items:center;gap:14px;margin-left:auto;}
+.live-chip{
+  display:flex;align-items:center;gap:7px;
+  padding:5px 12px;border-radius:20px;
+  background:var(--jade-soft);
+  border:1px solid rgba(0,147,106,.2);
+  font-family:var(--f-mono);font-size:.6rem;
+  color:var(--jade);letter-spacing:1px;
+}
+.ldot{position:relative;width:7px;height:7px;flex-shrink:0;}
+.ldot::before{content:'';position:absolute;inset:0;border-radius:50%;animation:ping 1.8s ease infinite;}
+.ldot::after{content:'';display:block;width:7px;height:7px;border-radius:50%;}
+.ldot-g::before,.ldot-g::after{background:var(--jade);}
+.ldot-o::before,.ldot-o::after{background:var(--fire);}
+.ldot-a::before,.ldot-a::after{background:var(--gold);}
+.ldot-b::before,.ldot-b::after{background:var(--ice);}
+
+.time-display{font-family:var(--f-mono);font-size:.68rem;color:var(--t3);}
+.avatar-btn{
+  width:34px;height:34px;border-radius:50%;
+  background:linear-gradient(135deg,var(--fire),var(--fire2));
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--f-display);font-size:1rem;cursor:pointer;
+  color:#fff;box-shadow:0 0 10px var(--fire-glow);
+  position:relative;
+}
+.logout-menu{
+  position:absolute;top:44px;right:0;width:160px;
+  background:#fff;border:1px solid var(--rim);border-radius:10px;
+  box-shadow:var(--shadow-md);padding:6px;z-index:200;display:none;
+}
+.logout-menu.open{display:block;animation:fadeSlide .2s ease both;}
+.logout-item{
+  padding:9px 12px;border-radius:7px;font-size:.8rem;
+  cursor:pointer;transition:background .1s;display:flex;align-items:center;gap:8px;
+}
+.logout-item:hover{background:var(--bg);}
+.logout-item.danger{color:var(--crimson);}
+
+/* Main */
+.shell{position:relative;z-index:2;display:flex;flex-direction:column;height:100vh;}
+.main{flex:1;overflow-y:auto;padding:24px 28px;}
+.view{display:none;animation:fadeSlide .4s ease both;}
+.view.on{display:block;}
+
+/* Page header */
+.ph{margin-bottom:22px;}
+.ph-eyebrow{font-family:var(--f-mono);font-size:.6rem;color:var(--fire);letter-spacing:3px;text-transform:uppercase;margin-bottom:6px;}
+.ph-title{font-family:var(--f-display);font-size:2.4rem;letter-spacing:1px;line-height:1;color:var(--t1);}
+.ph-sub{font-family:var(--f-mono);font-size:.65rem;color:var(--t3);margin-top:6px;}
+
+/* Cards */
+.gc{
+  background:var(--surface);
+  border:1px solid var(--rim);
+  border-radius:14px;
+  box-shadow:var(--shadow-sm);
+  position:relative;overflow:hidden;
+}
+.gc::before{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg,rgba(255,255,255,.6) 0%,transparent 60%);
+  pointer-events:none;border-radius:14px;
+}
+.gc-hdr{
+  padding:14px 20px;
+  border-bottom:1px solid var(--rim);
+  display:flex;align-items:center;justify-content:space-between;
+  background:rgba(255,255,255,.5);
+}
+.gc-title{font-family:var(--f-mono);font-size:.65rem;letter-spacing:2px;color:var(--t2);text-transform:uppercase;}
+.gc-badge{font-family:var(--f-mono);font-size:.58rem;padding:3px 9px;border-radius:20px;}
+
+/* Stat cards */
+.stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px;}
+.sc{
+  background:#fff;border:1px solid var(--rim);
+  border-radius:14px;padding:20px;position:relative;overflow:hidden;
+  transition:transform .2s,box-shadow .2s;cursor:default;
+  box-shadow:var(--shadow-sm);
+}
+.sc:hover{transform:translateY(-2px);box-shadow:var(--shadow-md);}
+.sc-glow{position:absolute;width:120px;height:120px;border-radius:50%;top:-40px;right:-30px;pointer-events:none;filter:blur(30px);opacity:.15;}
+.sc-icon{
+  width:38px;height:38px;border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.1rem;margin-bottom:14px;
+  background:var(--bg);border:1px solid var(--rim);
+}
+.sc-label{font-family:var(--f-mono);font-size:.57rem;color:var(--t3);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;}
+.sc-value{font-family:var(--f-display);font-size:2.8rem;line-height:1;letter-spacing:1px;margin-bottom:6px;}
+.sc-delta{font-family:var(--f-mono);font-size:.6rem;display:flex;align-items:center;gap:5px;}
+.sc-bar{position:absolute;bottom:0;left:0;right:0;height:3px;border-radius:0 0 14px 14px;}
+
+/* Pills / Chips */
+.chip{
+  font-family:var(--f-mono);font-size:.56rem;font-weight:500;
+  padding:3px 9px;border-radius:4px;white-space:nowrap;
+  display:inline-flex;align-items:center;gap:4px;letter-spacing:.05em;
+}
+.c-fire{color:var(--fire);background:var(--fire-soft);border:1px solid var(--fire-border);}
+.c-ice{color:var(--ice);background:var(--ice-soft);border:1px solid rgba(0,153,199,.25);}
+.c-jade{color:var(--jade);background:var(--jade-soft);border:1px solid rgba(0,147,106,.25);}
+.c-crimson{color:var(--crimson);background:var(--crimson-soft);border:1px solid rgba(217,34,69,.25);}
+.c-gold{color:var(--gold);background:var(--gold-soft);border:1px solid rgba(200,136,10,.25);}
+.c-violet{color:var(--violet);background:var(--violet-soft);border:1px solid rgba(123,53,240,.25);}
+.c-dim{color:var(--t2);background:var(--bg);border:1px solid var(--rim);}
+
+/* Route */
+.route{display:flex;align-items:center;gap:8px;font-size:.8rem;}
+.route-city{font-weight:600;color:var(--t1);}
+.route-track{flex:1;min-width:16px;height:1.5px;position:relative;background:var(--rim2);}
+.route-track::after{content:'▸';position:absolute;right:-5px;top:-6px;font-size:.55rem;color:var(--fire);}
+.route-track-fill{position:absolute;top:0;left:0;height:100%;background:linear-gradient(90deg,var(--fire),var(--fire2));transition:width 1s ease;}
+
+/* Progress */
+.prog{background:var(--bg2);border-radius:99px;overflow:hidden;}
+.prog-fill{height:100%;border-radius:99px;transition:width 1.2s cubic-bezier(.4,0,.2,1);}
+
+/* Table */
+.tbl{border:1px solid var(--rim);border-radius:14px;overflow:hidden;box-shadow:var(--shadow-sm);background:#fff;}
+.tbl-h{background:var(--bg);border-bottom:1px solid var(--rim);padding:10px 18px;display:grid;}
+.thl{font-family:var(--f-mono);font-size:.52rem;color:var(--t3);letter-spacing:1.5px;text-transform:uppercase;}
+.tr{padding:12px 18px;display:grid;align-items:center;border-bottom:1px solid rgba(0,0,0,.04);cursor:pointer;transition:background .12s;}
+.tr:last-child{border-bottom:none;}
+.tr:hover{background:var(--fire-xsoft);}
+.tr.even{background:rgba(0,0,0,.01);}
+
+/* Filter bar */
+.fbar{display:flex;gap:6px;margin-bottom:18px;flex-wrap:wrap;}
+.fb{
+  font-family:var(--f-mono);font-size:.6rem;
+  padding:6px 14px;border-radius:7px;cursor:pointer;
+  border:1px solid var(--rim);background:#fff;
+  color:var(--t2);transition:all .15s;letter-spacing:.05em;
+  box-shadow:var(--shadow-sm);
+}
+.fb.on{background:var(--fire-soft);color:var(--fire);border-color:var(--fire-border);}
+.fb:hover:not(.on){color:var(--t1);border-color:var(--rim2);}
+
+/* Order card */
+.oc{
+  background:#fff;border:1px solid var(--rim);
+  border-radius:14px;padding:20px;margin-bottom:14px;
+  position:relative;overflow:hidden;
+  transition:transform .2s,border-color .2s,box-shadow .2s;
+  box-shadow:var(--shadow-sm);
+}
+.oc:hover{transform:translateY(-1px);border-color:var(--fire-border);box-shadow:var(--shadow-md);}
+.oc::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(232,61,0,.3),transparent);
+}
+.oc-accent{position:absolute;top:0;left:0;width:3px;height:100%;border-radius:14px 0 0 14px;}
+.meta3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin:12px 0;}
+.mbox{background:var(--bg);border:1px solid var(--rim);border-radius:8px;padding:8px 12px;}
+.mk{font-family:var(--f-mono);font-size:.52rem;color:var(--t3);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:3px;}
+.mv{font-size:.8rem;font-weight:500;}
+
+/* Ladder */
+.ladder{display:flex;align-items:flex-start;margin-top:16px;padding-top:12px;border-top:1px solid var(--rim);}
+.ls{display:flex;align-items:flex-start;flex:1;}
+.lsw{display:flex;flex-direction:column;align-items:center;gap:4px;}
+.ldot2{width:8px;height:8px;border-radius:50%;background:var(--t4);flex-shrink:0;transition:all .3s;}
+.ldot2.done{background:var(--jade);}
+.ldot2.active{background:var(--fire);width:11px;height:11px;box-shadow:0 0 10px var(--fire-glow);border:2px solid var(--fire);}
+.llabel{font-family:var(--f-mono);font-size:.38rem;color:var(--t4);text-align:center;max-width:48px;line-height:1.4;text-transform:uppercase;}
+.llabel.done,.llabel.cur{color:var(--t3);}
+.lline{flex:1;height:1.5px;background:var(--t4);margin:4px 1px 0;transition:background .4s;}
+.lline.done{background:var(--jade);}
+
+/* Tracking */
+.tg{display:grid;grid-template-columns:1fr 310px;gap:14px;height:calc(100vh - 160px);}
+.map-card{background:#fff;border:1px solid var(--rim);border-radius:14px;overflow:hidden;position:relative;box-shadow:var(--shadow-sm);}
+.map-overlay{position:absolute;top:14px;left:14px;z-index:5;display:flex;gap:8px;flex-direction:column;}
+.map-chip{
+  display:inline-flex;align-items:center;gap:7px;
+  background:rgba(255,255,255,.92);backdrop-filter:blur(16px);
+  border:1px solid var(--rim2);border-radius:8px;
+  padding:7px 12px;font-family:var(--f-mono);font-size:.6rem;color:var(--jade);
+  box-shadow:var(--shadow-sm);
+}
+#mapCanvas{width:100%;height:100%;display:block;}
+.tside{display:flex;flex-direction:column;gap:10px;overflow-y:auto;}
+.tc{
+  background:#fff;border:1px solid var(--rim);
+  border-radius:10px;padding:14px;cursor:pointer;
+  transition:all .15s;box-shadow:var(--shadow-sm);
+}
+.tc:hover{border-color:var(--rim2);box-shadow:var(--shadow-md);}
+.tc.sel{background:var(--fire-soft);border-color:var(--fire-border);}
+.tstat{
+  display:inline-flex;align-items:center;gap:4px;
+  font-family:var(--f-mono);font-size:.58rem;padding:2px 8px;border-radius:4px;
+}
+.speed-bar{height:3px;background:var(--rim);border-radius:1.5px;margin-top:8px;overflow:hidden;}
+.speed-fill{height:100%;border-radius:1.5px;background:linear-gradient(90deg,var(--fire),var(--fire2));}
+
+/* Payments */
+.paygrid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:22px;}
+.payc{
+  background:#fff;border:1px solid var(--rim);border-radius:14px;padding:18px 20px;
+  position:relative;overflow:hidden;transition:transform .2s;
+  box-shadow:var(--shadow-sm);
+}
+.payc:hover{transform:translateY(-2px);box-shadow:var(--shadow-md);}
+.payc-bg{position:absolute;width:150px;height:150px;border-radius:50%;top:-50px;right:-40px;pointer-events:none;filter:blur(40px);opacity:.08;}
+
+/* Bar chart */
+.barchart{display:flex;align-items:flex-end;gap:3px;height:56px;padding:0 2px;}
+.bar{flex:1;border-radius:3px 3px 0 0;animation:barGrow .5s ease both;transform-origin:bottom;}
+
+/* Donut */
+.donut-wrap{position:relative;width:80px;height:80px;flex-shrink:0;}
+
+/* Activity feed */
+.af-item{display:flex;align-items:flex-start;gap:12px;padding:12px 20px;border-bottom:1px solid rgba(0,0,0,.04);}
+.af-item:last-child{border-bottom:none;}
+.af-ico{width:30px;height:30px;border-radius:8px;background:var(--bg);border:1px solid var(--rim);display:flex;align-items:center;justify-content:center;font-size:.85rem;flex-shrink:0;}
+.af-line{font-size:.77rem;line-height:1.45;color:var(--t1);}
+.af-time{font-family:var(--f-mono);font-size:.57rem;color:var(--t3);margin-top:2px;}
+
+/* Empty state */
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;gap:14px;}
+.es-ring{width:80px;height:80px;border-radius:50%;border:1.5px solid var(--rim2);display:flex;align-items:center;justify-content:center;font-size:2rem;position:relative;background:#fff;}
+.es-ring::before{content:'';position:absolute;inset:-6px;border-radius:50%;border:1px dashed rgba(232,61,0,.25);animation:rotateRing 12s linear infinite;}
+
+/* Util */
+.mono{font-family:var(--f-mono);}
+.fire{color:var(--fire);}
+.jade{color:var(--jade);}
+.ice{color:var(--ice);}
+.gold{color:var(--gold);}
+.t2{color:var(--t2);}
+.t3{color:var(--t3);}
+.fw6{font-weight:600;}
+.fw7{font-weight:700;}
+</style>
+</head>
+<body>
+
+<!-- ═══════════ PAGE 1: LANDING ═══════════ -->
+<div class="page active" id="page-landing">
+  <div class="land-bg"></div>
+  <div class="land-grid"></div>
+
+  <!-- NAV -->
+  <nav class="land-nav">
+    <div class="land-nav-brand">
+      <div class="land-nav-emblem">🚛</div>
+      <span class="land-nav-name">TRUCKFLOW</span>
+    </div>
+    <div class="land-nav-links">
+      <span class="land-nav-link">Features</span>
+      <span class="land-nav-link">For Shippers</span>
+      <span class="land-nav-link">For Transporters</span>
+      <span class="land-nav-link">Pricing</span>
+    </div>
+    <div class="land-nav-cta">
+      <button class="btn-ghost" onclick="showLogin()">Sign In</button>
+      <button class="btn-primary" onclick="showLogin()">Get Started Free →</button>
+    </div>
+  </nav>
+
+  <div class="land-content">
+
+    <!-- HERO -->
+    <div class="hero">
+      <div class="hero-left" style="animation:fadeUp .7s ease both">
+        <div class="hero-eyebrow">
+          <div class="ldot ldot-g" style="width:6px;height:6px"></div>
+          India's #1 Freight Platform
+        </div>
+        <h1 class="hero-h1">MOVE INDIA'S <span>FREIGHT</span> SMARTER</h1>
+        <p class="hero-sub">TruckFlow connects shippers, transporters, and drivers on a single real-time command platform. Post loads, bid, track, and settle — all in one place.</p>
+        <div class="hero-actions">
+          <button class="btn-hero" onclick="showLogin()">
+            🚛 Launch Command Center
+          </button>
+          <button class="btn-hero-out" onclick="showLogin()">Watch Demo</button>
+        </div>
+        <div class="hero-trust">
+          <div class="trust-item"><div class="trust-dot"></div>No credit card required</div>
+          <div class="trust-item"><div class="trust-dot"></div>Setup in 5 minutes</div>
+          <div class="trust-item"><div class="trust-dot"></div>Razorpay secured</div>
+        </div>
+      </div>
+      <div class="hero-visual">
+        <div class="hero-card-stack">
+          <div class="hc-main">
+            <div class="hc-label">Live Dashboard · April 2026</div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+              <div><div style="font-family:var(--f-display);font-size:2.2rem;color:var(--t1)">₹4,21,500</div>
+              <div style="font-size:.72rem;color:var(--jade);margin-top:2px;">▲ +18% vs last month</div></div>
+              <div class="hc-tag hc-tag-jade"><div class="ldot ldot-g" style="width:5px;height:5px"></div>LIVE</div>
+            </div>
+            <div class="hc-route">
+              <span class="hc-city">Mumbai</span>
+              <div class="hc-arrow"></div>
+              <span class="hc-city">Pune</span>
+            </div>
+            <div style="font-family:var(--f-mono);font-size:.6rem;color:var(--t3);margin-top:4px;">ORD-1712560001 · 65% complete · ETA 3h 20m</div>
+            <div class="hc-bar-row">
+              ${[28,42,38,57,49,70,55,80,92,66,78,71,60,88].map((h,i)=>`<div class="hc-bar" style="flex:1;height:${h}%;background:${i===13?'var(--fire)':'rgba(232,61,0,'+(.08+(h/100)*.45)+')'};border-radius:3px 3px 0 0;"></div>`).join('')}
+            </div>
+          </div>
+          <div class="hc-mini hc-mini-1">
+            <div class="hc-label">Active Loads</div>
+            <div class="hc-value">34</div>
+            <div class="hc-sub">+12 posted today</div>
+          </div>
+          <div class="hc-mini hc-mini-2">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+              <div class="ldot ldot-o"></div>
+              <span class="hc-label" style="margin:0">Truck Tracked</span>
+            </div>
+            <div style="font-size:.82rem;font-weight:600;color:var(--t1)">MH-12-AB-3456</div>
+            <div style="font-size:.68rem;color:var(--t3);margin-top:2px;">Suresh K. · 72 km/h</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STATS STRIP -->
+    <div class="stats-strip" style="animation:fadeUp .7s ease .3s both">
+      <div class="stat-item">
+        <div class="stat-num">12<span>K+</span></div>
+        <div class="stat-lbl">Active Transporters</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num">₹<span>48</span>Cr</div>
+        <div class="stat-lbl">Freight Moved MTD</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num">99<span>.4%</span></div>
+        <div class="stat-lbl">On-Time Delivery</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num"><span>22</span>m</div>
+        <div class="stat-lbl">Avg Bid-to-Book Time</div>
+      </div>
+    </div>
+
+    <!-- FEATURES -->
+    <div class="section" style="animation:fadeUp .7s ease .4s both">
+      <div class="sec-eye">Platform Features</div>
+      <h2 class="sec-h2">EVERYTHING YOUR FLEET NEEDS</h2>
+      <p class="sec-sub">From load posting to payment settlement — TruckFlow handles every step of the freight journey with precision and transparency.</p>
+      <div class="feat-grid">
+        <div class="feat-card">
+          <div class="feat-ico feat-ico-fire">📦</div>
+          <div class="feat-title">Smart Load Board</div>
+          <div class="feat-desc">Post loads instantly. Smart matching surfaces the best transporters. Real-time bidding with auto-award rules.</div>
+        </div>
+        <div class="feat-card">
+          <div class="feat-ico feat-ico-jade">📍</div>
+          <div class="feat-title">Live GPS Tracking</div>
+          <div class="feat-desc">Track every truck in real-time on an India map. 5-second GPS pings, ETA updates, and geofence alerts.</div>
+        </div>
+        <div class="feat-card">
+          <div class="feat-ico feat-ico-ice">💳</div>
+          <div class="feat-title">Escrow Payments</div>
+          <div class="feat-desc">Razorpay-powered escrow protects both parties. Funds auto-release on delivery confirmation.</div>
+        </div>
+        <div class="feat-card">
+          <div class="feat-ico feat-ico-gold">📊</div>
+          <div class="feat-title">Analytics Dashboard</div>
+          <div class="feat-desc">Revenue trends, fleet performance, load utilisation — all in one operations command center.</div>
+        </div>
+        <div class="feat-card">
+          <div class="feat-ico feat-ico-violet">⚖️</div>
+          <div class="feat-title">Dispute Resolution</div>
+          <div class="feat-desc">Structured dispute workflows with evidence upload, escrow hold, and admin arbitration panels.</div>
+        </div>
+        <div class="feat-card">
+          <div class="feat-ico feat-ico-crimson">🛡️</div>
+          <div class="feat-title">KYC & Compliance</div>
+          <div class="feat-desc">Aadhaar-verified drivers, RC verification for trucks, and GST-compliant invoicing built-in.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ROLES -->
+    <div class="section" style="animation:fadeUp .7s ease .5s both">
+      <div class="sec-eye">Built for Everyone</div>
+      <h2 class="sec-h2">YOUR ROLE, YOUR COMMAND CENTER</h2>
+      <p class="sec-sub">TruckFlow adapts to your role — each user gets a tailored view with the tools they need most.</p>
+      <div class="roles-grid">
+        <div class="feat-card" style="text-align:center">
+          <div style="font-size:2.2rem;margin-bottom:12px">🏢</div>
+          <div class="feat-title">Admin</div>
+          <div class="feat-desc">Full command. Manage all users, loads, orders, payments, and disputes across the platform.</div>
+        </div>
+        <div class="feat-card" style="text-align:center">
+          <div style="font-size:2.2rem;margin-bottom:12px">📦</div>
+          <div class="feat-title">Shipper</div>
+          <div class="feat-desc">Post loads, receive bids, track shipments, and manage payments — all from one screen.</div>
+        </div>
+        <div class="feat-card" style="text-align:center">
+          <div style="font-size:2.2rem;margin-bottom:12px">🚛</div>
+          <div class="feat-title">Transporter</div>
+          <div class="feat-desc">Browse available loads, place bids, manage your fleet, and track driver positions live.</div>
+        </div>
+        <div class="feat-card" style="text-align:center">
+          <div style="font-size:2.2rem;margin-bottom:12px">👤</div>
+          <div class="feat-title">Driver</div>
+          <div class="feat-desc">View assigned trips, update status, navigate routes, and log proof of delivery.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CTA -->
+    <div class="cta-section" style="animation:fadeUp .7s ease .6s both">
+      <div>
+        <div style="font-family:var(--f-mono);font-size:.6rem;color:rgba(255,255,255,.4);letter-spacing:3px;margin-bottom:10px;">GET STARTED TODAY</div>
+        <h2 class="cta-h2">READY TO MOVE SMARTER?</h2>
+        <p class="cta-sub">Join 12,000+ transporters and shippers already using TruckFlow. Free to start, scales with your fleet.</p>
+      </div>
+      <div style="display:flex;gap:14px;flex-shrink:0;">
+        <button class="btn-hero" onclick="showLogin()">🚛 Start for Free</button>
+        <button style="padding:14px 28px;border-radius:10px;background:rgba(255,255,255,.1);border:1.5px solid rgba(255,255,255,.2);color:#fff;font-family:var(--f-body);font-size:.95rem;font-weight:600;cursor:pointer;transition:all .2s;" onmouseover="this.style.background='rgba(255,255,255,.18)'" onmouseout="this.style.background='rgba(255,255,255,.1)'">Talk to Sales</button>
+      </div>
+    </div>
+
+    <!-- FOOTER -->
+    <div class="land-footer">
+      <div class="land-footer-brand">TRUCKFLOW</div>
+      <div class="land-footer-txt">© 2026 TruckFlow Technologies Pvt. Ltd. · India's Freight Command Platform</div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════ PAGE 2: LOGIN ═══════════ -->
+<div class="page" id="page-login">
+  <div class="login-bg-grid"></div>
+  <div class="login-bg-glow"></div>
+
+  <div class="login-box">
+    <div class="login-brand">
+      <div class="login-emblem">🚛</div>
+      <span class="login-title">TRUCKFLOW</span>
+    </div>
+    <div class="login-sub">Sign in to your Command Center</div>
+
+    <div id="loginErr" class="login-err">Please select a role and enter your credentials.</div>
+
+    <label class="login-lbl">Email Address</label>
+    <input class="login-input" id="loginEmail" type="email" placeholder="you@company.com" value="demo@truckflow.in">
+
+    <label class="login-lbl">Password</label>
+    <input class="login-input" id="loginPass" type="password" placeholder="••••••••" value="demo1234">
+
+    <label class="login-lbl" style="margin-bottom:10px">Select Your Role</label>
+    <div class="role-sel-grid">
+      <div class="role-opt" onclick="pickRole('admin',this)">
+        <span class="role-opt-ico">🏢</span>
+        <span class="role-opt-lbl">Admin</span>
+        <span class="role-opt-sub">Full platform access</span>
+      </div>
+      <div class="role-opt" onclick="pickRole('shipper',this)">
+        <span class="role-opt-ico">📦</span>
+        <span class="role-opt-lbl">Shipper</span>
+        <span class="role-opt-sub">Post & track loads</span>
+      </div>
+      <div class="role-opt" onclick="pickRole('transporter',this)">
+        <span class="role-opt-ico">🚛</span>
+        <span class="role-opt-lbl">Transporter</span>
+        <span class="role-opt-sub">Bid & manage fleet</span>
+      </div>
+      <div class="role-opt" onclick="pickRole('driver',this)">
+        <span class="role-opt-ico">👤</span>
+        <span class="role-opt-lbl">Driver</span>
+        <span class="role-opt-sub">View assigned trips</span>
+      </div>
+    </div>
+
+    <button class="btn-login" onclick="doLogin()">Sign In →</button>
+    <span class="login-back" onclick="showLanding()">← Back to Home</span>
+  </div>
+</div>
+
+<!-- ═══════════ PAGE 3: APP ═══════════ -->
+<div class="page" id="page-app">
+  <div class="bg-atmosphere"></div>
+
+  <div class="shell">
+    <!-- TOPBAR -->
+    <div class="topbar">
+      <div class="brand">
+        <div class="brand-emblem">🚛</div>
+        <div>
+          <div class="brand-name">TRUCKFLOW</div>
+          <div class="brand-tag">Command Center v2.0</div>
+        </div>
+      </div>
+
+      <div class="role-badge" id="roleBadge">ADMIN</div>
+
+      <nav class="nav" id="appNav"></nav>
+
+      <div class="topbar-end">
+        <div class="live-chip">
+          <div class="ldot ldot-g"></div>
+          ALL SYSTEMS LIVE
+        </div>
+        <div class="time-display" id="clockDisplay">—</div>
+        <div class="avatar-btn" id="avatarBtn" onclick="toggleLogout()">
+          <span id="avatarLetter">A</span>
+          <div class="logout-menu" id="logoutMenu">
+            <div class="logout-item" style="font-size:.72rem;color:var(--t3);padding-bottom:6px;border-bottom:1px solid var(--rim);margin-bottom:4px;" id="menuRole">Admin</div>
+            <div class="logout-item">⚙️ Settings</div>
+            <div class="logout-item">👤 Profile</div>
+            <div class="logout-item danger" onclick="doLogout()">← Sign Out</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MAIN -->
+    <div class="main">
+
+      <!-- DASHBOARD -->
+      <div class="view" id="view-dashboard">
+        <div class="ph">
+          <div class="ph-eyebrow">Overview · April 2026</div>
+          <div class="ph-title">OPERATIONS DASHBOARD</div>
+          <div class="ph-sub">Last updated just now &nbsp;·&nbsp; Auto-refreshes every 30s</div>
+        </div>
+        <div class="stat-row">
+          <div class="sc" style="animation:fadeSlide .4s ease .00s both">
+            <div class="sc-glow" style="background:var(--fire)"></div>
+            <div class="sc-icon" style="border-color:rgba(232,61,0,.2);">📦</div>
+            <div class="sc-label">Active Loads</div>
+            <div class="sc-value fire" data-count="34" style="animation:countUp .6s ease .3s both;opacity:0">34</div>
+            <div class="sc-delta jade">▲ <span>+12 posted today</span></div>
+            <div class="sc-bar" style="background:linear-gradient(90deg,var(--fire),var(--fire2))"></div>
+          </div>
+          <div class="sc" style="animation:fadeSlide .4s ease .09s both">
+            <div class="sc-glow" style="background:var(--ice)"></div>
+            <div class="sc-icon" style="border-color:rgba(0,153,199,.2);">🚛</div>
+            <div class="sc-label">Live Orders</div>
+            <div class="sc-value" style="color:var(--ice)" data-count="18">18</div>
+            <div class="sc-delta" style="color:var(--crimson)">● <span>3 critical ETA</span></div>
+            <div class="sc-bar" style="background:linear-gradient(90deg,var(--ice),rgba(0,153,199,.5))"></div>
+          </div>
+          <div class="sc" style="animation:fadeSlide .4s ease .18s both">
+            <div class="sc-glow" style="background:var(--jade)"></div>
+            <div class="sc-icon" style="border-color:rgba(0,147,106,.2);">💰</div>
+            <div class="sc-label">Revenue MTD</div>
+            <div class="sc-value jade">₹4.2L</div>
+            <div class="sc-delta jade">▲ <span>+18% vs March</span></div>
+            <div class="sc-bar" style="background:linear-gradient(90deg,var(--jade),rgba(0,147,106,.5))"></div>
+          </div>
+          <div class="sc" style="animation:fadeSlide .4s ease .27s both">
+            <div class="sc-glow" style="background:var(--violet)"></div>
+            <div class="sc-icon" style="border-color:rgba(123,53,240,.2);">⚡</div>
+            <div class="sc-label">Avg Bid Time</div>
+            <div class="sc-value" style="color:var(--violet)">22<span style="font-size:1.2rem">m</span></div>
+            <div class="sc-delta t2">↔ <span>7 bids avg per load</span></div>
+            <div class="sc-bar" style="background:linear-gradient(90deg,var(--violet),rgba(123,53,240,.5))"></div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1.15fr 1fr 320px;gap:14px;">
+          <div class="gc" style="animation:fadeSlide .4s ease .1s both">
+            <div class="gc-hdr">
+              <span class="gc-title">Live Orders</span>
+              <div style="display:flex;align-items:center;gap:8px"><div class="ldot ldot-o"></div><span class="mono" style="font-size:.58rem;color:var(--fire)">4 ACTIVE</span></div>
+            </div>
+            <div id="dashOrders"></div>
+          </div>
+          <div class="gc" style="animation:fadeSlide .4s ease .18s both">
+            <div class="gc-hdr">
+              <span class="gc-title">Revenue Trend</span>
+              <span class="gc-badge c-jade">↑ 18% MoM</span>
+            </div>
+            <div style="padding:18px 20px">
+              <div style="font-family:var(--f-display);font-size:2.4rem;letter-spacing:1px;margin-bottom:2px;color:var(--t1)">₹4,21,500</div>
+              <div class="mono t3" style="font-size:.6rem;margin-bottom:18px">of ₹5,00,000 target &nbsp;·&nbsp; 84.3% achieved</div>
+              <div class="prog" style="height:5px;margin-bottom:18px">
+                <div class="prog-fill" style="width:84%;background:linear-gradient(90deg,var(--fire),var(--fire2));height:5px;box-shadow:0 0 6px var(--fire-glow)"></div>
+              </div>
+              <div class="barchart" id="barChart"></div>
+              <div style="display:flex;gap:3px;margin-top:3px;padding:0 2px">
+                <span id="barLabels" style="flex:1;display:flex;gap:3px;font-family:var(--f-mono);font-size:.38rem;color:var(--t4)"></span>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px">
+                <div style="background:var(--bg);border:1px solid var(--rim);border-radius:8px;padding:8px 10px;text-align:center">
+                  <div class="mono t3" style="font-size:.5rem;margin-bottom:3px">LOADS</div>
+                  <div style="font-family:var(--f-display);font-size:1.4rem">34</div>
+                </div>
+                <div style="background:var(--bg);border:1px solid var(--rim);border-radius:8px;padding:8px 10px;text-align:center">
+                  <div class="mono t3" style="font-size:.5rem;margin-bottom:3px">DONE</div>
+                  <div style="font-family:var(--f-display);font-size:1.4rem;color:var(--jade)">28</div>
+                </div>
+                <div style="background:var(--bg);border:1px solid var(--rim);border-radius:8px;padding:8px 10px;text-align:center">
+                  <div class="mono t3" style="font-size:.5rem;margin-bottom:3px">ACTIVE</div>
+                  <div style="font-family:var(--f-display);font-size:1.4rem;color:var(--fire)">6</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="gc" style="animation:fadeSlide .4s ease .26s both;display:flex;flex-direction:column">
+            <div class="gc-hdr">
+              <span class="gc-title">Live Activity</span>
+              <div class="ldot ldot-g"></div>
+            </div>
+            <div style="flex:1;overflow-y:auto;max-height:400px" id="actFeed"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- LOAD BOARD -->
+      <div class="view" id="view-loads">
+        <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:20px">
+          <div class="ph">
+            <div class="ph-eyebrow">02 · Market</div>
+            <div class="ph-title">LOAD BOARD</div>
+            <div class="ph-sub" id="loadCountTxt">6 loads in market</div>
+          </div>
+          <button onclick="void(0)" style="display:flex;align-items:center;gap:8px;background:linear-gradient(135deg,var(--fire),var(--fire2));color:#fff;border:none;font-family:var(--f-mono);font-size:.68rem;padding:10px 20px;border-radius:8px;cursor:pointer;font-weight:600;letter-spacing:.08em;box-shadow:0 4px 16px var(--fire-glow);transition:opacity .2s;" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">＋ POST LOAD</button>
+        </div>
+        <div class="fbar" id="loadFilters">
+          <button class="fb on" onclick="filt('ALL',this)">ALL</button>
+          <button class="fb" onclick="filt('OPEN',this)">OPEN</button>
+          <button class="fb" onclick="filt('ASSIGNED',this)">ASSIGNED</button>
+          <button class="fb" onclick="filt('IN_PROGRESS',this)">IN PROGRESS</button>
+          <button class="fb" onclick="filt('COMPLETED',this)">COMPLETED</button>
+        </div>
+        <div class="tbl">
+          <div class="tbl-h" style="grid-template-columns:2.2fr 1.6fr 1fr .8fr .8fr 1fr 1fr .7fr .85fr">
+            <span class="thl">Load ID</span><span class="thl">Route</span><span class="thl">Material</span><span class="thl">Weight</span><span class="thl">Type</span><span class="thl">Price</span><span class="thl">Status</span><span class="thl">Bids</span><span class="thl">Priority</span>
+          </div>
+          <div id="loadRows"></div>
+        </div>
+      </div>
+
+      <!-- ORDERS -->
+      <div class="view" id="view-orders">
+        <div class="ph">
+          <div class="ph-eyebrow">04 · Execution</div>
+          <div class="ph-title">ORDER TRACKER</div>
+          <div class="ph-sub">Full trip lifecycle · real-time status updates from drivers</div>
+        </div>
+        <div id="orderCards"></div>
+      </div>
+
+      <!-- TRACKING -->
+      <div class="view" id="view-tracking">
+        <div class="tg">
+          <div class="map-card">
+            <div class="map-overlay">
+              <div class="map-chip"><div class="ldot ldot-g"></div>LIVE · 3 trucks tracked</div>
+              <div class="map-chip" style="font-size:.56rem;color:var(--t2)">📡 GPS ping every 5s</div>
+            </div>
+            <canvas id="mapCanvas"></canvas>
+          </div>
+          <div class="tside">
+            <div style="font-family:var(--f-display);font-size:1.2rem;letter-spacing:1px;padding:2px 0">FLEET STATUS</div>
+            <div id="truckCards"></div>
+            <div class="gc" style="padding:16px 14px;margin-top:4px">
+              <div class="mono t3" style="font-size:.55rem;letter-spacing:2px;text-transform:uppercase;margin-bottom:12px">Fleet Overview</div>
+              <div id="fleetStats"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PAYMENTS -->
+      <div class="view" id="view-payments">
+        <div class="ph">
+          <div class="ph-eyebrow">05 · Finance</div>
+          <div class="ph-title">PAYMENTS & ESCROW</div>
+          <div class="ph-sub">Razorpay powered · all transactions secured in escrow</div>
+        </div>
+        <div class="paygrid">
+          <div class="payc" style="border:1px solid rgba(200,136,10,.2)">
+            <div class="payc-bg" style="background:var(--gold)"></div>
+            <div class="mono t3" style="font-size:.57rem;letter-spacing:2px;margin-bottom:8px">ESCROW HELD</div>
+            <div style="font-family:var(--f-display);font-size:2.2rem;color:var(--gold);margin-bottom:5px">₹90,300</div>
+            <div class="mono t3" style="font-size:.6rem">2 active orders · secured</div>
+            <div class="prog" style="height:3px;margin-top:12px"><div class="prog-fill" style="width:45%;background:var(--gold);height:3px"></div></div>
+          </div>
+          <div class="payc" style="border:1px solid rgba(0,147,106,.2)">
+            <div class="payc-bg" style="background:var(--jade)"></div>
+            <div class="mono t3" style="font-size:.57rem;letter-spacing:2px;margin-bottom:8px">RELEASED MTD</div>
+            <div style="font-family:var(--f-display);font-size:2.2rem;color:var(--jade);margin-bottom:5px">₹2,18,400</div>
+            <div class="mono t3" style="font-size:.6rem">14 payouts completed</div>
+            <div class="prog" style="height:3px;margin-top:12px"><div class="prog-fill" style="width:87%;background:var(--jade);height:3px"></div></div>
+          </div>
+          <div class="payc" style="border:1px solid rgba(217,34,69,.2)">
+            <div class="payc-bg" style="background:var(--crimson)"></div>
+            <div class="mono t3" style="font-size:.57rem;letter-spacing:2px;margin-bottom:8px">ON HOLD (DISPUTE)</div>
+            <div style="font-family:var(--f-display);font-size:2.2rem;color:var(--crimson);margin-bottom:5px">₹12,000</div>
+            <div class="mono t3" style="font-size:.6rem">1 dispute under review</div>
+            <div class="prog" style="height:3px;margin-top:12px"><div class="prog-fill" style="width:6%;background:var(--crimson);height:3px"></div></div>
+          </div>
+        </div>
+        <div class="tbl">
+          <div class="tbl-h" style="grid-template-columns:1fr 1.4fr 1.5fr 1.1fr 1fr 1fr .95fr">
+            <span class="thl">Pay ID</span><span class="thl">Order</span><span class="thl">Shipper</span><span class="thl">Amount</span><span class="thl">Method</span><span class="thl">Date</span><span class="thl">Status</span>
+          </div>
+          <div id="payRows"></div>
+        </div>
+      </div>
+
+      <!-- DISPUTES -->
+      <div class="view" id="view-disputes">
+        <div class="empty-state">
+          <div class="es-ring">⚖️</div>
+          <div style="font-family:var(--f-display);font-size:2rem;letter-spacing:1px">DISPUTES MODULE</div>
+          <div class="mono t3" style="font-size:.65rem">Coming in v2.1 · Admin resolution panel, escrow arbitration, timeline audit</div>
+          <div class="chip c-dim">UNDER CONSTRUCTION</div>
+        </div>
+      </div>
+
+      <!-- MY TRIPS (Driver) -->
+      <div class="view" id="view-mytrips">
+        <div class="ph">
+          <div class="ph-eyebrow">Driver · My Assignments</div>
+          <div class="ph-title">MY TRIPS</div>
+          <div class="ph-sub">Your assigned orders and delivery status</div>
+        </div>
+        <div id="driverOrders"></div>
+      </div>
+
+    </div><!-- /main -->
+  </div><!-- /shell -->
+</div><!-- /page-app -->
+
+<script>
+/* ═══════════ DATA ═══════════ */
+const LOADS=[
+  {id:"LB-20260408-A3F1",from:"Mumbai",to:"Pune",mat:"Electronics",wt:"12T",type:"Container",price:28500,bids:7,status:"OPEN",pri:"HIGH",posted:"2h ago"},
+  {id:"LB-20260408-B7C2",from:"Delhi",to:"Jaipur",mat:"Textiles",wt:"8T",type:"Flatbed",price:14200,bids:3,status:"OPEN",pri:"NORMAL",posted:"4h ago"},
+  {id:"LB-20260408-D9E4",from:"Bangalore",to:"Chennai",mat:"Machinery",wt:"22T",type:"Heavy",price:52000,bids:2,status:"ASSIGNED",pri:"HIGH",posted:"6h ago"},
+  {id:"LB-20260407-F2G5",from:"Hyderabad",to:"Vizag",mat:"FMCG",wt:"6T",type:"Mini",price:9800,bids:11,status:"IN_PROGRESS",pri:"LOW",posted:"1d ago"},
+  {id:"LB-20260407-H4I6",from:"Kolkata",to:"Patna",mat:"Chemicals",wt:"18T",type:"Tanker",price:38000,bids:4,status:"OPEN",pri:"NORMAL",posted:"1d ago"},
+  {id:"LB-20260407-J6K7",from:"Ahmedabad",to:"Surat",mat:"Pharma",wt:"4T",type:"Reefer",price:16500,bids:9,status:"COMPLETED",pri:"HIGH",posted:"2d ago"},
+];
+const ORDERS=[
+  {id:"ORD-1712560001",shipper:"Reliance Retail",trans:"FastMove Logistics",from:"Mumbai",to:"Pune",driver:"Suresh K.",truck:"MH-12-AB-3456",status:"IN_TRANSIT",amount:28500,prog:65,eta:"3h 20m"},
+  {id:"ORD-1712559802",shipper:"Siemens India",trans:"HeavyHaul Co.",from:"Bangalore",to:"Chennai",driver:"Ravi M.",truck:"KA-01-CD-7890",status:"LOADING",amount:52000,prog:30,eta:"8h 45m"},
+  {id:"ORD-1712558401",shipper:"HUL Distributors",trans:"QuickShip",from:"Hyderabad",to:"Vizag",driver:"Prakash V.",truck:"TS-09-EF-1234",status:"AT_DESTINATION",amount:9800,prog:88,eta:"45m"},
+  {id:"ORD-1712550001",shipper:"Sun Pharma",trans:"ColdChain Express",from:"Ahmedabad",to:"Surat",driver:"Mohan D.",truck:"GJ-05-GH-5678",status:"COMPLETED",amount:16500,prog:100,eta:"Done"},
+];
+const ACTIVITY=[
+  {time:"2m ago",icon:"🚛",text:"MH-12-AB-3456 passed Khopoli toll, speed 72km/h"},
+  {time:"8m ago",icon:"💳",text:"Payment ₹16,500 released to ColdChain Express"},
+  {time:"15m ago",icon:"📦",text:"New load LB-20260408-A3F1 posted by Reliance Retail"},
+  {time:"28m ago",icon:"✅",text:"ORD-1712550001 delivered — POD uploaded by Mohan D."},
+  {time:"34m ago",icon:"📍",text:"MH-12-AB-3456 at pickup point, Nashik bypass"},
+  {time:"1h ago",icon:"⚖️",text:"Dispute raised on ORD-1712545001"},
+  {time:"2h ago",icon:"✅",text:"KYC approved — HeavyHaul Co. now active"},
+];
+const PAYMENTS=[
+  {id:"PAY-8821",order:"ORD-1712560001",shipper:"Reliance Retail",amount:28500,method:"Razorpay",date:"08 Apr 26",status:"IN_ESCROW"},
+  {id:"PAY-8820",order:"ORD-1712559802",shipper:"Siemens India",amount:52000,method:"Razorpay",date:"08 Apr 26",status:"IN_ESCROW"},
+  {id:"PAY-8819",order:"ORD-1712558401",shipper:"HUL Distributors",amount:9800,method:"Razorpay",date:"07 Apr 26",status:"RELEASING"},
+  {id:"PAY-8818",order:"ORD-1712550001",shipper:"Sun Pharma",amount:16500,method:"UPI Payout",date:"07 Apr 26",status:"PAID"},
+  {id:"PAY-8817",order:"ORD-1712540001",shipper:"Tata Steel",amount:74200,method:"Bank Transfer",date:"06 Apr 26",status:"PAID"},
+];
+const TRUCKS=[
+  {id:"MH-12-AB-3456",driver:"Suresh K.",route:"Mumbai → Pune",lat:58,lng:34,status:"Moving",speed:72,order:"ORD-1712560001"},
+  {id:"KA-01-CD-7890",driver:"Ravi M.",route:"Bangalore → Chennai",lat:70,lng:52,status:"Loading",speed:0,order:"ORD-1712559802"},
+  {id:"TS-09-EF-1234",driver:"Prakash V.",route:"Hyderabad → Vizag",lat:54,lng:63,status:"Moving",speed:85,order:"ORD-1712558401"},
+];
+const STEPS=["CREATED","TRUCK_ASSIGNED","EN_ROUTE","LOADING","IN_TRANSIT","AT_DESTINATION","DELIVERED","COMPLETED"];
+
+/* ═══════════ ROLE-BASED NAV CONFIG ═══════════ */
+const ROLE_NAV={
+  admin:[
+    {id:'dashboard',icon:'◈',label:'Dashboard',pip:true},
+    {id:'loads',icon:'📦',label:'Load Board'},
+    {id:'orders',icon:'🚛',label:'Orders'},
+    {id:'tracking',icon:'📍',label:'Live Tracking'},
+    {id:'payments',icon:'💳',label:'Payments'},
+    {id:'disputes',icon:'⚖️',label:'Disputes'},
+  ],
+  shipper:[
+    {id:'dashboard',icon:'◈',label:'Dashboard',pip:true},
+    {id:'loads',icon:'📦',label:'Load Board'},
+    {id:'orders',icon:'🚛',label:'My Orders'},
+    {id:'payments',icon:'💳',label:'Payments'},
+  ],
+  transporter:[
+    {id:'dashboard',icon:'◈',label:'Dashboard',pip:true},
+    {id:'loads',icon:'📦',label:'Available Loads'},
+    {id:'orders',icon:'🚛',label:'Orders'},
+    {id:'tracking',icon:'📍',label:'My Fleet'},
+  ],
+  driver:[
+    {id:'mytrips',icon:'🗂️',label:'My Trips',pip:true},
+    {id:'tracking',icon:'📍',label:'Live Tracking'},
+  ],
+};
+const ROLE_LABELS={admin:'Admin',shipper:'Shipper',transporter:'Transporter',driver:'Driver'};
+const ROLE_ICONS={admin:'🏢',shipper:'📦',transporter:'🚛',driver:'👤'};
+
+/* ═══════════ PAGE ROUTER ═══════════ */
+function showPage(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  const p=document.getElementById('page-'+id);
+  p.classList.add('active');
+  if(id==='landing') document.body.style.overflow='hidden';
+  else document.body.style.overflow='hidden';
+}
+function showLogin(){ showPage('login'); }
+function showLanding(){ showPage('landing'); }
+
+/* ═══════════ ROLE SELECTION ═══════════ */
+let selectedRole=null;
+function pickRole(role, el){
+  selectedRole=role;
+  document.querySelectorAll('.role-opt').forEach(r=>r.classList.remove('sel'));
+  el.classList.add('sel');
+}
+
+/* ═══════════ LOGIN ═══════════ */
+function doLogin(){
+  const email=document.getElementById('loginEmail').value.trim();
+  const pass=document.getElementById('loginPass').value.trim();
+  const err=document.getElementById('loginErr');
+  if(!email||!pass||!selectedRole){
+    err.style.display='block';
+    err.textContent='Please select a role and enter your credentials.';
+    return;
+  }
+  err.style.display='none';
+  // Build role-specific UI then show app
+  setupApp(selectedRole,email);
+  showPage('app');
+}
+
+function doLogout(){
+  selectedRole=null;
+  document.querySelectorAll('.role-opt').forEach(r=>r.classList.remove('sel'));
+  document.getElementById('logoutMenu').classList.remove('open');
+  showPage('landing');
+}
+
+function toggleLogout(){
+  document.getElementById('logoutMenu').classList.toggle('open');
+}
+document.addEventListener('click',e=>{
+  if(!e.target.closest('#avatarBtn'))
+    document.getElementById('logoutMenu').classList.remove('open');
+});
+
+/* ═══════════ SETUP APP FOR ROLE ═══════════ */
+function setupApp(role, email){
+  // Update role badge
+  const badge=document.getElementById('roleBadge');
+  badge.textContent=ROLE_ICONS[role]+' '+ROLE_LABELS[role].toUpperCase();
+
+  // Avatar letter
+  document.getElementById('avatarLetter').textContent=email[0].toUpperCase();
+  document.getElementById('menuRole').textContent=ROLE_ICONS[role]+' '+ROLE_LABELS[role]+' · '+email;
+
+  // Build nav
+  const nav=document.getElementById('appNav');
+  const items=ROLE_NAV[role]||ROLE_NAV.admin;
+  nav.innerHTML=items.map(it=>`
+    <button class="nb ${it.id===items[0].id?'on':''}" onclick="go('${it.id}',this)">
+      <span class="ni">${it.icon}</span> ${it.label}
+      ${it.pip?'<span class="nb-pip"></span>':''}
+    </button>`).join('');
+
+  // Show first view
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('on'));
+  document.getElementById('view-'+items[0].id).classList.add('on');
+
+  // Build content
+  buildDash();
+  renderLoads();
+  buildOrders();
+  buildPay();
+  buildTrucks();
+  if(role==='driver') buildDriverOrders();
+}
+
+/* ═══════════ NAV ═══════════ */
+function go(id,btn){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('on'));
+  document.querySelectorAll('.nb').forEach(b=>b.classList.remove('on'));
+  document.getElementById('view-'+id).classList.add('on');
+  btn.classList.add('on');
+  if(id==='tracking') setTimeout(drawMap,60);
+}
+
+/* ═══════════ CLOCK ═══════════ */
+function tick(){
+  const el=document.getElementById('clockDisplay');
+  if(el) el.textContent=new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});
+}
+setInterval(tick,1000);tick();
+
+/* ═══════════ CHIP CONFIG ═══════════ */
+const C={
+  OPEN:{cls:"c-fire",label:"OPEN"},ASSIGNED:{cls:"c-ice",label:"ASSIGNED"},
+  IN_PROGRESS:{cls:"c-gold",label:"IN PROGRESS"},IN_TRANSIT:{cls:"c-gold",label:"IN TRANSIT"},
+  LOADING:{cls:"c-ice",label:"LOADING"},AT_DESTINATION:{cls:"c-violet",label:"AT DEST."},
+  COMPLETED:{cls:"c-jade",label:"COMPLETED"},
+  HIGH:{cls:"c-crimson",label:"HIGH"},NORMAL:{cls:"c-dim",label:"NORMAL"},LOW:{cls:"c-jade",label:"LOW"},
+  IN_ESCROW:{cls:"c-gold",label:"ESCROW"},RELEASING:{cls:"c-ice",label:"RELEASING"},PAID:{cls:"c-jade",label:"PAID OUT"},
+};
+function chip(s){const c=C[s]||{cls:"c-dim",label:s};return `<span class="chip ${c.cls}">${c.label}</span>`;}
+function fmt(n){return Number(n).toLocaleString('en-IN');}
+function routeH(a,b,p=0){
+  return `<div class="route"><span class="route-city">${a}</span>
+    <div class="route-track"><div class="route-track-fill" style="width:${p}%"></div></div>
+    <span class="route-city">${b}</span></div>`;
+}
+
+/* ═══════════ COUNTERS ═══════════ */
+function runCounters(){
+  document.querySelectorAll('[data-count]').forEach(el=>{
+    const t=+el.dataset.count; let c=0;
+    const s=Math.ceil(t/28);
+    const tm=setInterval(()=>{c=Math.min(c+s,t);el.textContent=c;if(c>=t)clearInterval(tm);},28);
+  });
+}
+
+/* ═══════════ DASHBOARD ═══════════ */
+function buildDash(){
+  document.getElementById('dashOrders').innerHTML=ORDERS.slice(0,4).map((o,i)=>`
+    <div style="padding:13px 20px;border-bottom:1px solid rgba(0,0,0,.04);animation:fadeSlide .4s ease ${.05+i*.07}s both;cursor:pointer;transition:background .1s" onmouseover="this.style.background='var(--fire-xsoft)'" onmouseout="this.style.background='transparent'">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="mono fire" style="font-size:.64rem">${o.id}</span>
+          ${chip(o.status)}
+          ${o.status!=='COMPLETED'?'<div class="ldot ldot-o"></div>':''}
+        </div>
+        <span style="font-family:var(--f-display);font-size:1.1rem;letter-spacing:.5px">₹${fmt(o.amount)}</span>
+      </div>
+      ${routeH(o.from,o.to,o.prog)}
+      <div style="display:flex;justify-content:space-between;margin-top:8px">
+        <span style="font-size:.72rem;color:var(--t2)">${o.driver} &nbsp;·&nbsp; ${o.truck}</span>
+        <span class="mono" style="font-size:.62rem;color:${o.status==='COMPLETED'?'var(--jade)':'var(--gold)'}">ETA ${o.eta}</span>
+      </div>
+    </div>`).join('');
+
+  const bars=[28,42,38,57,49,70,55,80,92,66,78,71,60,88];
+  document.getElementById('barChart').innerHTML=bars.map((h,i)=>`
+    <div class="bar" style="height:${h}%;background:${i===bars.length-1?'var(--fire)':`rgba(232,61,0,${.08+(h/100)*.45})`};animation-delay:${i*.025}s;${i===bars.length-1?'box-shadow:0 0 8px rgba(232,61,0,.35)':''}" title="Apr"></div>`).join('');
+
+  document.getElementById('actFeed').innerHTML=ACTIVITY.map((a,i)=>`
+    <div class="af-item" style="animation:fadeSlide .4s ease ${i*.06}s both">
+      <div class="af-ico">${a.icon}</div>
+      <div><div class="af-line">${a.text}</div><div class="af-time">${a.time}</div></div>
+    </div>`).join('');
+
+  runCounters();
+}
+
+/* ═══════════ LOAD BOARD ═══════════ */
+let curF='ALL';
+function filt(f,btn){
+  curF=f;
+  document.querySelectorAll('.fb').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  renderLoads();
+}
+function renderLoads(){
+  const list=curF==='ALL'?LOADS:LOADS.filter(l=>l.status===curF);
+  document.getElementById('loadCountTxt').textContent=list.length+' loads in market';
+  document.getElementById('loadRows').innerHTML=list.map((l,i)=>`
+    <div class="tr ${i%2?'':'even'}" style="grid-template-columns:2.2fr 1.6fr 1fr .8fr .8fr 1fr 1fr .7fr .85fr;animation:fadeSlide .3s ease ${i*.05}s both">
+      <div>
+        <div class="mono fire" style="font-size:.66rem">${l.id}</div>
+        <div class="mono t3" style="font-size:.54rem;margin-top:2px">${l.posted}</div>
+      </div>
+      <div>${routeH(l.from,l.to)}</div>
+      <span style="font-size:.76rem">${l.mat}</span>
+      <span class="mono" style="font-size:.72rem">${l.wt}</span>
+      <span style="font-size:.73rem;color:var(--t2)">${l.type}</span>
+      <span class="mono fw6" style="font-size:.76rem">₹${fmt(l.price)}</span>
+      ${chip(l.status)}
+      <div style="display:flex;align-items:center;gap:5px">
+        <span class="mono" style="font-size:.72rem;color:${l.bids>=7?'var(--jade)':'var(--t1)'}">${l.bids}</span>
+        <div style="width:28px;height:3px;background:var(--rim);border-radius:2px;overflow:hidden">
+          <div style="width:${Math.min(l.bids*9,100)}%;height:100%;background:linear-gradient(90deg,var(--ice),var(--jade))"></div>
+        </div>
+      </div>
+      ${chip(l.pri)}
+    </div>`).join('');
+}
+
+/* ═══════════ ORDERS ═══════════ */
+const accCol={OPEN:'var(--fire)',ASSIGNED:'var(--ice)',IN_TRANSIT:'var(--gold)',LOADING:'var(--ice)',AT_DESTINATION:'var(--violet)',COMPLETED:'var(--jade)'};
+function buildOrders(){
+  document.getElementById('orderCards').innerHTML=ORDERS.map((o,oi)=>{
+    const cur=STEPS.indexOf(o.status);
+    const ldr=STEPS.map((s,si)=>{
+      const d=si<=cur,a=si===cur;
+      return `<div class="ls">
+        <div class="lsw">
+          <div class="ldot2 ${a?'active':d?'done':''}"></div>
+          <div class="llabel ${a?'cur':d?'done':''}">${s.replace(/_/g,' ')}</div>
+        </div>
+        ${si<STEPS.length-1?`<div class="lline ${si<cur?'done':''}"></div>`:''}
+      </div>`;
+    }).join('');
+    const accentC=accCol[o.status]||'var(--t3)';
+    return `
+    <div class="oc" style="animation:fadeSlide .4s ease ${oi*.09}s both">
+      <div class="oc-accent" style="background:${accentC}"></div>
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;padding-left:8px">
+        <div>
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:5px">
+            <span class="mono fire" style="font-size:.7rem">${o.id}</span>
+            ${chip(o.status)}
+            ${o.status!=='COMPLETED'?'<div class="ldot ldot-a"></div>':''}
+          </div>
+          <div style="font-size:.78rem;color:var(--t2)">${o.shipper} <span style="color:var(--t3);margin:0 4px">→</span> ${o.trans}</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-family:var(--f-display);font-size:1.6rem;letter-spacing:.5px;line-height:1">₹${fmt(o.amount)}</div>
+          <div class="mono" style="font-size:.6rem;color:var(--t2);margin-top:3px">ETA <span style="color:${o.status==='COMPLETED'?'var(--jade)':'var(--gold)'}">${o.eta}</span></div>
+        </div>
+      </div>
+      <div style="padding-left:8px">
+        ${routeH(o.from,o.to,o.prog)}
+        <div style="margin-top:5px">
+          <div class="prog" style="height:4px">
+            <div class="prog-fill" style="width:${o.prog}%;background:linear-gradient(90deg,${accentC},${accentC}cc);height:4px;box-shadow:0 0 6px ${accentC}55"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-top:4px">
+            <span class="mono" style="font-size:.57rem;color:var(--t3)">${o.prog}% complete</span>
+            <span class="mono" style="font-size:.57rem;color:var(--t3)">ETA ${o.eta}</span>
+          </div>
+        </div>
+        <div class="meta3" style="margin-top:10px">
+          <div class="mbox"><div class="mk">Driver</div><div class="mv">${o.driver}</div></div>
+          <div class="mbox"><div class="mk">Truck</div><div class="mv">${o.truck}</div></div>
+          <div class="mbox"><div class="mk">Progress</div><div class="mv" style="color:${accentC}">${o.prog}%</div></div>
+        </div>
+        <div class="ladder">${ldr}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ═══════════ DRIVER ORDERS ═══════════ */
+function buildDriverOrders(){
+  const el=document.getElementById('driverOrders');
+  if(!el) return;
+  el.innerHTML=ORDERS.slice(0,2).map((o,oi)=>{
+    const accentC=accCol[o.status]||'var(--t3)';
+    return `
+    <div class="oc" style="animation:fadeSlide .4s ease ${oi*.09}s both">
+      <div class="oc-accent" style="background:${accentC}"></div>
+      <div style="padding-left:8px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:10px">
+          <span class="mono fire" style="font-size:.7rem">${o.id}</span>
+          ${chip(o.status)}
+        </div>
+        ${routeH(o.from,o.to,o.prog)}
+        <div class="meta3" style="margin-top:10px">
+          <div class="mbox"><div class="mk">Truck</div><div class="mv">${o.truck}</div></div>
+          <div class="mbox"><div class="mk">ETA</div><div class="mv" style="color:var(--gold)">${o.eta}</div></div>
+          <div class="mbox"><div class="mk">Amount</div><div class="mv fire">₹${fmt(o.amount)}</div></div>
+        </div>
+        <div style="margin-top:10px">
+          <div class="prog" style="height:5px">
+            <div class="prog-fill" style="width:${o.prog}%;background:linear-gradient(90deg,${accentC},${accentC}cc);height:5px"></div>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ═══════════ TRACKING ═══════════ */
+let selT=0;
+function buildTrucks(){
+  const tc=document.getElementById('truckCards');
+  if(!tc) return;
+  tc.innerHTML=TRUCKS.map((t,i)=>`
+    <div class="tc ${i===selT?'sel':''}" onclick="pickT(${i})" style="animation:fadeSlide .3s ease ${i*.08}s both">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px">
+        <span class="mono" style="font-size:.68rem;color:${i===selT?'var(--fire)':'var(--t1)'};font-weight:500">${t.id}</span>
+        <span class="tstat ${t.status==='Moving'?'c-jade':'c-ice'}">${t.status==='Moving'?'<div class="ldot ldot-g" style="width:5px;height:5px"></div>':''} ${t.status}</span>
+      </div>
+      <div style="font-size:.78rem;font-weight:500;margin-bottom:3px">${t.driver}</div>
+      <div class="mono t3" style="font-size:.6rem;margin-bottom:8px">${t.route}</div>
+      <div class="speed-bar"><div class="speed-fill" style="width:${Math.min(t.speed,120)/120*100}%"></div></div>
+      <div style="display:flex;justify-content:space-between;margin-top:6px">
+        <span class="mono t3" style="font-size:.6rem">${t.order}</span>
+        <span class="mono" style="font-size:.64rem;color:${t.status==='Moving'?'var(--gold)':'var(--t3)'}">${t.speed} km/h</span>
+      </div>
+    </div>`).join('');
+
+  const fs=document.getElementById('fleetStats');
+  if(fs) fs.innerHTML=[
+    ['Moving','2','var(--jade)'],['Loading','1','var(--ice)'],['Idle','0','var(--t4)']
+  ].map(([l,v,c])=>`
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <span style="font-size:.76rem;color:var(--t2)">${l}</span>
+      <div style="display:flex;align-items:center;gap:6px">
+        <div style="width:40px;height:3px;background:var(--rim);border-radius:2px;overflow:hidden">
+          <div style="width:${v==='2'?'66%':v==='1'?'33%':'0%'};height:100%;background:${c}"></div>
+        </div>
+        <span class="mono fw6" style="font-size:.76rem;color:${c}">${v}</span>
+      </div>
+    </div>`).join('');
+}
+function pickT(i){selT=i;buildTrucks();drawMap();}
+
+function drawMap(){
+  const cv=document.getElementById('mapCanvas');
+  if(!cv) return;
+  const W=cv.width=cv.offsetWidth||700, H=cv.height=cv.offsetHeight||430;
+  const c=cv.getContext('2d');
+  c.clearRect(0,0,W,H);
+
+  // Light grid
+  c.strokeStyle='rgba(0,0,0,.04)';c.lineWidth=1;
+  for(let x=0;x<W;x+=44){c.beginPath();c.moveTo(x,0);c.lineTo(x,H);c.stroke();}
+  for(let y=0;y<H;y+=44){c.beginPath();c.moveTo(0,y);c.lineTo(W,y);c.stroke();}
+
+  // Subtle radial
+  const grd=c.createRadialGradient(W/2,H/2,0,W/2,H/2,W*.6);
+  grd.addColorStop(0,'rgba(232,61,0,0.025)');grd.addColorStop(1,'transparent');
+  c.fillStyle=grd;c.fillRect(0,0,W,H);
+
+  // India outline
+  const pts=[[.28,.05],[.36,.04],[.44,.06],[.52,.04],[.58,.08],[.65,.06],[.72,.10],[.76,.16],[.80,.22],[.82,.30],[.85,.36],[.88,.44],[.86,.52],[.82,.58],[.78,.62],[.74,.68],[.68,.74],[.62,.80],[.56,.88],[.50,.96],[.48,.98],[.44,.92],[.40,.86],[.36,.78],[.30,.72],[.24,.68],[.18,.62],[.14,.54],[.12,.46],[.14,.38],[.18,.30],[.20,.22],[.22,.14],[.25,.08],[.28,.05]];
+  c.beginPath();pts.forEach(([rx,ry],i)=>{i?c.lineTo(rx*W,ry*H):c.moveTo(rx*W,ry*H);});
+  c.closePath();
+  c.fillStyle='rgba(232,61,0,0.04)';c.fill();
+  c.strokeStyle='rgba(232,61,0,0.35)';c.lineWidth=1.5;c.stroke();
+
+  // Cities
+  const cities=[
+    {x:.19,y:.52,n:'Mumbai'},{x:.23,y:.59,n:'Pune'},{x:.45,y:.67,n:'Bangalore'},
+    {x:.59,y:.63,n:'Chennai'},{x:.47,y:.56,n:'Hyderabad'},{x:.57,y:.47,n:'Vizag'},
+    {x:.33,y:.17,n:'Delhi'},{x:.52,y:.30,n:'Lucknow'},{x:.37,y:.42,n:'Nagpur'}
+  ];
+  cities.forEach(ct=>{
+    c.beginPath();c.arc(ct.x*W,ct.y*H,2.5,0,Math.PI*2);
+    c.fillStyle='rgba(0,0,0,.3)';c.fill();
+    c.fillStyle='rgba(0,0,0,.5)';c.font='700 9px JetBrains Mono,monospace';
+    c.textAlign='center';c.fillText(ct.n,ct.x*W,ct.y*H-10);
+  });
+
+  // Route lines
+  const routes=[
+    {x1:.19,y1:.52,x2:.23,y2:.59,c1:'rgba(232,61,0,.7)',c2:'rgba(232,61,0,.2)'},
+    {x1:.45,y1:.67,x2:.59,y2:.63,c1:'rgba(0,153,199,.7)',c2:'rgba(0,153,199,.2)'},
+    {x1:.47,y1:.56,x2:.57,y2:.47,c1:'rgba(0,147,106,.7)',c2:'rgba(0,147,106,.2)'},
+  ];
+  routes.forEach(r=>{
+    const lg=c.createLinearGradient(r.x1*W,r.y1*H,r.x2*W,r.y2*H);
+    lg.addColorStop(0,r.c1);lg.addColorStop(1,r.c2);
+    c.beginPath();c.moveTo(r.x1*W,r.y1*H);c.lineTo(r.x2*W,r.y2*H);
+    c.strokeStyle=lg;c.lineWidth=2;c.setLineDash([6,4]);c.stroke();c.setLineDash([]);
+  });
+
+  // Trucks
+  TRUCKS.forEach((t,i)=>{
+    const x=(t.lng/100)*W, y=(t.lat/100)*H, sel=i===selT;
+    if(sel){
+      const rg=c.createRadialGradient(x,y,0,x,y,26);
+      rg.addColorStop(0,'rgba(232,61,0,0.2)');rg.addColorStop(1,'transparent');
+      c.beginPath();c.arc(x,y,26,0,Math.PI*2);c.fillStyle=rg;c.fill();
+    }
+    c.beginPath();c.arc(x,y,sel?13:9,0,Math.PI*2);
+    c.fillStyle=sel?'#e83d00':'rgba(232,61,0,0.8)';c.fill();
+    c.strokeStyle=sel?'rgba(255,255,255,.95)':'rgba(255,255,255,.7)';c.lineWidth=sel?2:1.5;c.stroke();
+    c.fillStyle='#fff';c.font=`bold ${sel?9:8}px JetBrains Mono,monospace`;
+    c.textAlign='center';c.textBaseline='middle';c.fillText('T',x,y);
+    c.fillStyle='rgba(0,0,0,.55)';c.font='700 8px JetBrains Mono,monospace';
+    c.textBaseline='alphabetic';c.fillText(t.id.slice(-6),x,y-20);
+  });
+}
+
+/* ═══════════ PAYMENTS ═══════════ */
+function buildPay(){
+  const el=document.getElementById('payRows');
+  if(!el) return;
+  el.innerHTML=PAYMENTS.map((p,i)=>`
+    <div class="tr ${i%2?'':'even'}" style="grid-template-columns:1fr 1.4fr 1.5fr 1.1fr 1fr 1fr .95fr;animation:fadeSlide .3s ease ${i*.05}s both">
+      <span class="mono fire" style="font-size:.67rem">${p.id}</span>
+      <span class="mono t3" style="font-size:.64rem">${p.order}</span>
+      <span style="font-size:.78rem">${p.shipper}</span>
+      <span class="mono fw6" style="font-size:.76rem">₹${fmt(p.amount)}</span>
+      <span style="font-size:.73rem;color:var(--t2)">${p.method}</span>
+      <span class="mono t3" style="font-size:.64rem">${p.date}</span>
+      ${chip(p.status)}
+    </div>`).join('');
+}
+
+/* ═══════════ RESIZE ═══════════ */
+window.addEventListener('resize',()=>{
+  if(document.getElementById('view-tracking').classList.contains('on')) drawMap();
+});
+</script>
+</body>
+</html>
